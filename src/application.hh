@@ -35,8 +35,6 @@ public:
   Node &dht();
   /** Returns the settings instance. */
   Settings &settings();
-  /** Returns a weak reference to the identity of this DHT node. */
-  Identity &identity();
   /** Returns a weak reference to the buddy list. */
   BuddyList &buddies();
   /** Returns the log model. */
@@ -92,8 +90,6 @@ protected:
   };
 
 protected:
-  /** The identity of this DHT node. */
-  Identity *_identity;
   /** This DHT node. */
   Node *_dht;
   /** Status of the DHT node. */

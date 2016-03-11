@@ -25,7 +25,7 @@
 
 
 Application::Application(int &argc, char *argv[])
-  : QApplication(argc, argv), _identity(0), _dht(0), _status(0), _settings(0),
+  : QApplication(argc, argv), _dht(0), _status(0), _settings(0),
     _buddies(0), _bootstrapList(), _reconnectTimer()
 {
   // Init PortAudio
@@ -35,9 +35,9 @@ Application::Application(int &argc, char *argv[])
   setQuitOnLastWindowClosed(false);
 
   // Set application name
-  setApplicationName("vlf");
-  setOrganizationName("com.github.hmatuschek");
-  setOrganizationDomain("com.github.hmatuschek");
+  setApplicationName("ovlclient");
+  setOrganizationName("io.github.hmatuschek");
+  setOrganizationDomain("io.github.hmatuschek");
 
   // Try to load identity from file
   QDir nodeDir = QStandardPaths::writableLocation(
@@ -46,28 +46,13 @@ Application::Application(int &argc, char *argv[])
   if (! nodeDir.exists()) {
     nodeDir.mkpath(nodeDir.absolutePath());
   }
-  // Load or create identity
-  QString idFile(nodeDir.canonicalPath()+"/identity.pem");
-  if (!QFile::exists(idFile)) {
-    logInfo() << "No identity found -> create new identity.";
-    _identity = Identity::newIdentity();
-    if (_identity) { _identity->save(idFile); }
-  } else {
-    logDebug() << "Load identity from" << idFile;
-    _identity = Identity::load(idFile);
-  }
-
-  if (0 == _identity) {
-    logError() << "Error while loading or creating identity.";
-    return;
-  }
 
   // Create log model
   _logModel = new LogModel();
   Logger::addHandler(_logModel);
 
   // Create DHT instance
-  _dht = new Node(*_identity, QHostAddress::Any, 7742);
+  _dht = new Node(nodeDir.canonicalPath()+"/identity.pem", QHostAddress::Any, 7742);
   // register services
   _dht->registerService("::simplechat", new ChatService(*this));
 
@@ -270,11 +255,6 @@ Application::dht() {
 Settings &
 Application::settings() {
   return *_settings;
-}
-
-Identity &
-Application::identity() {
-  return *_identity;
 }
 
 BuddyList &
