@@ -9,6 +9,7 @@
 
 #include <ovlnet/socks.hh>
 #include <ovlnet/logger.hh>
+#include <ovlnet/network.hh>
 
 #include <portaudio.h>
 
@@ -53,8 +54,11 @@ Application::Application(int &argc, char *argv[])
 
   // Create DHT instance
   _dht = new Node(nodeDir.canonicalPath()+"/identity.pem", QHostAddress::Any, 7742);
+  // Enable rendezvous pings (assuming that we are behind a NAT)
+  _dht->enableRendezvousPing(true);
+
   // register services
-  _dht->registerService("::simplechat", new ChatService(*this));
+  _dht->registerService("simplechat", new ChatService(*this));
 
   // Load settings
   _settings = new Settings(nodeDir.canonicalPath()+"/settings.json");
@@ -111,9 +115,6 @@ Application::Application(int &argc, char *argv[])
   }
 
   // Connect to signals
-  connect(_dht, SIGNAL(nodeFound(NodeItem)), this, SLOT(onNodeFound(NodeItem)));
-  connect(_dht, SIGNAL(nodeNotFound(Identifier,QList<NodeItem>)),
-          this, SLOT(onNodeNotFound(Identifier,QList<NodeItem>)));
   connect(_dht, SIGNAL(connected()), this, SLOT(onDHTConnected()));
   connect(_dht, SIGNAL(disconnected()), this, SLOT(onDHTDisconnected()));
 
@@ -228,23 +229,35 @@ Application::startChatWith(const Identifier &id) {
   // Add id to list of pending chats
   _pendingStreams.insert(id, new SecureChat(dht()));
   // First search node
-  _dht->findNode(id);
+  FindNodeQuery *query = new FindNodeQuery(id);
+  connect(query, SIGNAL(found(NodeItem)), this, SLOT(onNodeFound(NodeItem)));
+  connect(query, SIGNAL(failed(Identifier,QList<NodeItem>)),
+          this, SLOT(onNodeNotFound(Identifier,QList<NodeItem>)));
+  _dht->search(query);
 }
 
 void
 Application::call(const Identifier &id) {
   // Add id to list of pending calls
   _pendingStreams.insert(id, new SecureCall(false, dht()));
-  // First, search node
-  _dht->findNode(id);
+  // First search node
+  FindNodeQuery *query = new FindNodeQuery(id);
+  connect(query, SIGNAL(found(NodeItem)), this, SLOT(onNodeFound(NodeItem)));
+  connect(query, SIGNAL(failed(Identifier,QList<NodeItem>)),
+          this, SLOT(onNodeNotFound(Identifier,QList<NodeItem>)));
+  _dht->search(query);
 }
 
 void
 Application::sendFile(const QString &path, size_t size, const Identifier &id) {
   // Add id to list of pending file transfers
   _pendingStreams.insert(id, new FileUpload(dht(), path, size));
-  // First, search for the node id
-  _dht->findNode(id);
+  // First search node
+  FindNodeQuery *query = new FindNodeQuery(id);
+  connect(query, SIGNAL(found(NodeItem)), this, SLOT(onNodeFound(NodeItem)));
+  connect(query, SIGNAL(failed(Identifier,QList<NodeItem>)),
+          this, SLOT(onNodeNotFound(Identifier,QList<NodeItem>)));
+  _dht->search(query);
 }
 
 Node &
@@ -279,7 +292,9 @@ Application::started() const {
 
 void
 Application::onNodeFound(const NodeItem &node) {
-  if (! _pendingStreams.contains(node.id())) { return; }
+  if (! _pendingStreams.contains(node.id()))
+    return;
+
   SecureSocket *stream = _pendingStreams[node.id()];
   _pendingStreams.remove(node.id());
 
@@ -291,13 +306,13 @@ Application::onNodeFound(const NodeItem &node) {
   if (0 != (chat = dynamic_cast<SecureChat *>(stream))) {
     logInfo() << "Node " << node.id() << " found: Start chat.";
     (new ChatWindow(*this, chat))->show();
-    _dht->startConnection("::simplechat", node, stream);
+    _dht->startConnection("simplechat", node, stream);
   } else if (0 != (call = dynamic_cast<SecureCall *>(stream))) {
     logInfo() << "Node " << node.id() << " found: Start call.";
-    _dht->startConnection("::call", node, stream);
+    _dht->startConnection("call", node, stream);
   } else if (0 != (upload = dynamic_cast<FileUpload *>(stream))) {
     logInfo() << "Node " << node.id() << "found: Start upload of file " << upload->fileName();
-    _dht->startConnection("::fileupload", node, stream);
+    _dht->startConnection("fileupload", node, stream);
   }
 }
 
@@ -351,7 +366,7 @@ Application::ChatService::ChatService(Application &app)
 
 SecureSocket *
 Application::ChatService::newSocket() {
-  logDebug() << "Application: Create new SecureCall instance.";
+  logDebug() << "Application: Create new SecureChat instance.";
   return new SecureChat(_application.dht());
 }
 

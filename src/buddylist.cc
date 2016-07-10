@@ -186,15 +186,15 @@ BuddyList::BuddyList(Application &application, const QString path, QObject *pare
   connect(&_presenceTimer, SIGNAL(timeout()), this, SLOT(_onUpdateNodes()));
   _presenceTimer.start();
 
-  // Setup timer to search for offline buddies every 2 minutes
-  _searchTimer.setInterval(1000*60*2);
+  // Setup timer to search for offline buddies every 10 minutes
+  _searchTimer.setInterval(1000*60*10);
   _searchTimer.setSingleShot(false);
   connect(&_searchTimer, SIGNAL(timeout()), this, SLOT(_onSearchNodes()));
   _searchTimer.start();
 
   // Get notified if a node is reachable
-  connect(&_application.dht(), SIGNAL(nodeFound(NodeItem)), this, SLOT(_onNodeFound(NodeItem)));
-  connect(&_application.dht(), SIGNAL(nodeReachable(NodeItem)), this, SLOT(_onNodeReachable(NodeItem)));
+  connect(&_application.dht(), SIGNAL(nodeReachable(NodeItem)),
+          this, SLOT(_onNodeReachable(NodeItem)));
 
   // Read buddy list from file
   if (! _file.open(QIODevice::ReadOnly)) {
@@ -518,7 +518,9 @@ BuddyList::_onSearchNodes() {
   for (; node != _nodes.end(); node++) {
     BuddyList::Node *nodeitem = _buddies[node.value()]->node(node.key());
     if (! nodeitem->hasBeenSeen()) {
-      _application.dht().findNode(node.key());
+      FindNodeQuery *query = new FindNodeQuery(node.key());
+      connect(query, SIGNAL(found(NodeItem)), this, SLOT(_onNodeFound(NodeItem)));
+      _application.dht().search(query);
     }
   }
 }

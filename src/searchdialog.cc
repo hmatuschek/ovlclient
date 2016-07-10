@@ -40,9 +40,6 @@ SearchDialog::SearchDialog(Node *dht, BuddyList *buddies, QWidget *parent)
   QObject::connect(_query, SIGNAL(returnPressed()), this, SLOT(_onStartSearch()));
   QObject::connect(addAsNew, SIGNAL(clicked()), this, SLOT(_onAddAsNewBuddy()));
   QObject::connect(addTo, SIGNAL(clicked()), this, SLOT(_onAddToBuddy()));
-  QObject::connect(_dht, SIGNAL(nodeFound(NodeItem)), this, SLOT(_onSearchSuccess(NodeItem)));
-  QObject::connect(_dht, SIGNAL(nodeNotFound(Identifier,QList<NodeItem>)),
-                   this, SLOT(_onSearchFailed(Identifier,QList<NodeItem>)));
 }
 
 void
@@ -51,7 +48,12 @@ SearchDialog::_onStartSearch() {
   Identifier id = Identifier::fromBase32(_query->text());
   _currentSearch = id;
   _result->setRowCount(0);
-  _dht->findNode(_currentSearch);
+  FindNodeQuery *query = new FindNodeQuery(_currentSearch);
+  QObject::connect(query, SIGNAL(found(NodeItem)), this, SLOT(_onSearchSuccess(NodeItem)));
+  QObject::connect(query, SIGNAL(failed(Identifier,QList<NodeItem>)),
+                   this, SLOT(_onSearchFailed(Identifier,QList<NodeItem>)));
+  _dht->search(query);
+
 }
 
 void
