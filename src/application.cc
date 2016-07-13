@@ -309,6 +309,7 @@ Application::onNodeFound(const NodeItem &node) {
     _dht->startConnection("simplechat", node, stream);
   } else if (0 != (call = dynamic_cast<SecureCall *>(stream))) {
     logInfo() << "Node " << node.id() << " found: Start call.";
+    (new CallWindow(*this, call))->show();
     _dht->startConnection("call", node, stream);
   } else if (0 != (upload = dynamic_cast<FileUpload *>(stream))) {
     logInfo() << "Node " << node.id() << "found: Start upload of file " << upload->fileName();
