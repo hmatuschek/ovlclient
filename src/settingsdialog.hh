@@ -12,13 +12,13 @@ class WhiteListView: public QWidget
   Q_OBJECT
 
 public:
-  WhiteListView(QSet<Identifier> &whitelist, QWidget *parent=0);
+  WhiteListView(NodeIdList &whitelist, QWidget *parent=0);
 
 public slots:
   void apply();
 
 public:
-  QSet<Identifier> &_whitelist;
+  NodeIdList &_whitelist;
   QListWidget *_listview;
 };
 
@@ -47,6 +47,23 @@ protected:
 };
 
 
+class UPNPSettingsView: public QWidget
+{
+  Q_OBJECT
+
+public:
+  UPNPSettingsView(UPNPSettings &settings, QWidget *parent=0);
+
+public slots:
+  void apply();
+
+protected:
+  UPNPSettings &_settings;
+  QCheckBox *_enabled;
+  QLineEdit *_externalPort;
+};
+
+
 class SettingsDialog : public QDialog
 {
   Q_OBJECT
@@ -60,6 +77,7 @@ public slots:
 protected:
   Settings &_settings;
   SocksServiceSettingsView *_socks;
+  UPNPSettingsView *_upnp;
 };
 
 #endif // SETTINGSDIALOG_H

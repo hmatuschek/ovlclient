@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QLineEdit>
 
 
 /* ********************************************************************************************* *
@@ -16,9 +17,11 @@ SettingsDialog::SettingsDialog(Settings &settings, QWidget *parent)
   setMinimumWidth(640);
 
   _socks = new SocksServiceSettingsView(settings.socksServiceSettings());
+  _upnp  = new UPNPSettingsView(settings.upnpSettings());
 
   QTabWidget *tabs = new QTabWidget();
-  tabs->addTab(_socks, QIcon("://icons/globe.png"), tr("SOCKS Proxy"));
+  tabs->addTab(_socks, QIcon("://icons/globe.png"), tr("SOCKS5 Proxy"));
+  tabs->addTab(_upnp, tr("UPNP"));
 
   QDialogButtonBox *bbox = new QDialogButtonBox(
         QDialogButtonBox::Close | QDialogButtonBox::Apply | QDialogButtonBox::Ok);
@@ -36,6 +39,7 @@ SettingsDialog::SettingsDialog(Settings &settings, QWidget *parent)
 void
 SettingsDialog::apply() {
   _socks->apply();
+  _upnp->apply();
   _settings.save();
 }
 
@@ -99,9 +103,37 @@ SocksServiceSettingsView::_onAllowWhiteListToggled(bool value) {
 
 
 /* ********************************************************************************************* *
+ * Implementation of UPNPSettingsView
+ * ********************************************************************************************* */
+UPNPSettingsView::UPNPSettingsView(UPNPSettings &settings, QWidget *parent)
+  : QWidget(parent), _settings(settings)
+{
+  _enabled = new QCheckBox();
+  _enabled->setChecked(_settings.enabled());
+  _externalPort = new QLineEdit(QString::number(_settings.externalPort()));
+  _externalPort->setValidator(new QIntValidator(0, 0xffff));
+
+  QVBoxLayout *layout = new QVBoxLayout();
+  QFormLayout *form = new QFormLayout();
+  form->addRow(tr("Enabled"), _enabled);
+  form->addRow(tr("External port"), _externalPort);
+  layout->addLayout(form);
+  setLayout(layout);
+}
+
+void
+UPNPSettingsView::apply() {
+  _settings.enable(_enabled->isChecked());
+  _settings.setExternalPort(_externalPort->text().toUInt());
+}
+
+
+
+
+/* ********************************************************************************************* *
  * Implementation of WhiteListView
  * ********************************************************************************************* */
-WhiteListView::WhiteListView(QSet<Identifier> &whitelist, QWidget *parent)
+WhiteListView::WhiteListView(NodeIdList &whitelist, QWidget *parent)
   : QWidget(parent), _whitelist(whitelist)
 {
   _listview = new QListWidget();

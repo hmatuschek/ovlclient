@@ -14,10 +14,10 @@ CallWindow::CallWindow(Application &application, SecureCall *call, QWidget *pare
   QLabel *label = new QLabel();
   if (_application.buddies().hasNode(_call->peerId())) {
     label->setText(
-          tr("<h3>Call with %1</h3>").arg(_application.buddies().buddyName(_call->peerId())));
+          tr("<h3>Call with %0</h3>").arg(_application.buddies().buddyName(_call->peerId())));
   } else {
     label->setText(
-          tr("<h3>Call with node %1</h3>").arg(QString(_call->peerId().toHex())));
+          tr("<h3>Call with node %0</h3>").arg(QString(_call->peerId().toHex())));
   }
   label->setAlignment(Qt::AlignCenter);
   label->setMargin(8);

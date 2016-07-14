@@ -59,6 +59,7 @@ Application::Application(int &argc, char *argv[])
 
   // register services
   _dht->registerService("simplechat", new ChatService(*this));
+  _dht->registerService("call", new CallService(*this));
 
   // Load settings
   _settings = new Settings(nodeDir.canonicalPath()+"/settings.json");
@@ -384,4 +385,35 @@ Application::ChatService::connectionStarted(SecureSocket *socket) {
 void
 Application::ChatService::connectionFailed(SecureSocket *socket) {
   logDebug() << "Application: Connection failed!";
+}
+
+
+/* ********************************************************************************************* *
+ * Implementation of CallService
+ * ********************************************************************************************* */
+Application::CallService::CallService(Application &app)
+  : AbstractService(), _application(app)
+{
+  // pass...
+}
+
+SecureSocket *
+Application::CallService::newSocket() {
+  logDebug() << "Application: Create new SecureCall instance.";
+  return new SecureCall(true, _application.dht());
+}
+
+bool
+Application::CallService::allowConnection(const NodeItem &peer) {
+  return _application._buddies->hasNode(peer.id());
+}
+
+void
+Application::CallService::connectionStarted(SecureSocket *socket) {
+  (new CallWindow(_application, dynamic_cast<SecureCall *>(socket)))->show();
+}
+
+void
+Application::CallService::connectionFailed(SecureSocket *socket) {
+  logDebug() << "Application: Call connection failed!";
 }

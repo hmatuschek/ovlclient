@@ -66,7 +66,9 @@ BuddyListView::onCall() {
   if (! items.first().isValid()) { return; }
 
   if (_application.buddies().isBuddy(items.first())) {
-    if (0 == _application.buddies().getBuddy(items.first())->numNodes()) { return; }
+    if (0 == _application.buddies().getBuddy(items.first())->numNodes()) {
+      return;
+    }
     _application.call(
           _application.buddies().getBuddy(items.first())->node(0)->id());
   } else if (_application.buddies().isNode(items.first())) {

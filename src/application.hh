@@ -89,6 +89,18 @@ protected:
     Application &_application;
   };
 
+  class CallService: public AbstractService
+  {
+  public:
+    CallService(Application &app);
+    SecureSocket *newSocket();
+    bool allowConnection(const NodeItem &peer);
+    void connectionStarted(SecureSocket *socket);
+    void connectionFailed(SecureSocket *socket);
+  protected:
+    Application &_application;
+  };
+
 protected:
   /** This DHT node. */
   Node *_dht;
