@@ -7,8 +7,7 @@
 #include <QStringList>
 #include <QTimer>
 
-#include <ovlnet/crypto.hh>
-#include <ovlnet/node.hh>
+#include <ovlnet.hh>
 #include "dhtstatus.hh"
 #include "buddylist.hh"
 #include "bootstrapnodelist.hh"
