@@ -410,6 +410,7 @@ Application::CallService::allowConnection(const NodeItem &peer) {
 
 void
 Application::CallService::connectionStarted(SecureSocket *socket) {
+  dynamic_cast<SecureCall *>(socket)->initialized();
   (new CallWindow(_application, dynamic_cast<SecureCall *>(socket)))->show();
 }
 
